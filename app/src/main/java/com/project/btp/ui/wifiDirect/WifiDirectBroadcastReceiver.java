@@ -1,18 +1,20 @@
 package com.project.btp.ui.wifiDirect;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 
+import androidx.core.app.ActivityCompat;
+
 import com.project.btp.ui.student.StudentDashboardActivity;
 import com.project.btp.ui.teacher.TeacherDashboardActivity;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 
 public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     private WifiP2pManager manager;
@@ -20,7 +22,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     private TeacherDashboardActivity teachActivity;
     private StudentDashboardActivity studActivity;
 
-    public List peers = new ArrayList();
+    public HashSet<String> peers;
 
     public WifiDirectBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel, TeacherDashboardActivity teachActivity) {
         super();
@@ -49,7 +51,26 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
             }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             if (manager != null) {
+                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
                 manager.requestPeers(channel, peerListener);
+            }
+        }
+
+        if (WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION.equals(action)) {
+            int state = intent.getIntExtra(WifiP2pManager.EXTRA_DISCOVERY_STATE, 10000);
+            if (state == WifiP2pManager.WIFI_P2P_DISCOVERY_STARTED) {
+                manager.requestPeers(channel, peerListener);
+            } else if (teachActivity != null) {
+                teachActivity.takeAttendance(peers);
             }
         }
     }
@@ -58,41 +79,30 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peersList) {
             if (teachActivity != null) {
-                teachActivity.allPeers.clear();
-                teachActivity.allPeers.addAll(peersList.getDeviceList());
-
-                peers = teachActivity.allPeers;
-                System.out.println(peers);
-
-                for (int i=0; i<peers.size(); i++) {
-                    WifiP2pDevice device = (WifiP2pDevice) peers.get(i);
-
-                    System.out.println(device.deviceName);
-
-                    teachActivity.studentsList.add(device.deviceName);
+                for (WifiP2pDevice peer : peersList.getDeviceList()) {
+                    peers.add(peer.deviceName);
                 }
-
-                if (peers.size() == 0) return;
-
                 System.out.println("Peers added");
                 // TODO : Add method to display attendance count
             } else if (studActivity != null) {
-                studActivity.allPeers.clear();
-                studActivity.allPeers.addAll(peersList.getDeviceList());
-
-                peers = studActivity.allPeers;
-                System.out.println(peers);
-
-                for (int i=0; i<peers.size(); i++) {
-                    WifiP2pDevice device = (WifiP2pDevice) peers.get(i);
-
-                    System.out.println(device.deviceName);
-                    if (studActivity.studentId.equals(device.deviceName)) {
-                        studActivity.processState.setValue(2);
-                    }
-                }
-
-                if (peers.size() == 0) return;
+                System.out.println("Peers added");
+                // TODO: Show attendance taken for student
+//                studActivity.allPeers.clear();
+//                studActivity.allPeers.addAll(peersList.getDeviceList());
+//
+//                peers = studActivity.allPeers;
+//                System.out.println(peers);
+//
+//                for (int i=0; i<peers.size(); i++) {
+//                    WifiP2pDevice device = (WifiP2pDevice) peers.get(i);
+//
+//                    System.out.println(device.deviceName);
+//                    if (studActivity.studentId.equals(device.deviceName)) {
+//                        studActivity.processState.setValue(2);
+//                    }
+//                }
+//
+//                if (peers.size() == 0) return;
             }
         }
     };

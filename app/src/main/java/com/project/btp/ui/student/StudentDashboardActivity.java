@@ -11,13 +11,18 @@ import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,6 +31,7 @@ import android.widget.Toast;
 import com.google.firebase.database.FirebaseDatabase;
 import com.project.btp.R;
 import com.project.btp.ui.courses.AddCourseActivity;
+import com.project.btp.ui.login.LoginViewModel;
 import com.project.btp.ui.wifiDirect.WifiDirectBroadcastReceiver;
 
 import java.lang.reflect.Method;
@@ -45,6 +51,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     public String studentId;
     public List allPeers = new ArrayList();
     public MutableLiveData<Integer> processState = new MutableLiveData<>();
+    private LoginViewModel loginViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +59,8 @@ public class StudentDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_student_dashboard);
         Toolbar toolbar = findViewById(R.id.stud_dash_toolbar);
         setSupportActionBar(toolbar);
+
+        loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
@@ -95,7 +104,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 //TODO: Indication of current status of request
                 changeDeviceName(studentId);
                 processState.setValue(1);
-                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED) {
                     // TODO: Consider calling
                     //    ActivityCompat#requestPermissions
                     // here to request the missing permissions, and then overriding
@@ -144,6 +153,25 @@ public class StudentDashboardActivity extends AppCompatActivity {
             });
         } catch (Exception e)   {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_student, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.action_logout:
+                loginViewModel.logout(this);
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }

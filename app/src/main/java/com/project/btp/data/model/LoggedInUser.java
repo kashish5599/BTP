@@ -5,17 +5,24 @@ package com.project.btp.data.model;
  */
 public class LoggedInUser {
 
-    public String instiName;
-    public String depName;
-    public String email;
-    public String phone;
-    public String username;
-    private String userId;
-    private String displayName;
-    private boolean isTeacher;
+    public String instiName ="";
+    public String depName="";
+    public String email="";
+    public String phone="";
+    public String username="";
+    private String userId="";
+    private String displayName="";
+    private boolean isTeacher=false;
 
     public LoggedInUser() {
 
+    }
+
+    public LoggedInUser(String userId, String username, Boolean isTeacher) {
+        this.userId = userId;
+        this.username = username;
+        this.displayName = username;
+        this.isTeacher = isTeacher;
     }
 
     public LoggedInUser(String userId, String username, String phone, String instiName, String depName,

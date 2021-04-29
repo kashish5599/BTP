@@ -30,8 +30,9 @@ import com.project.btp.ui.registration.RegistrationActivity;
 import com.project.btp.ui.student.StudentDashboardActivity;
 import com.project.btp.ui.teacher.TeacherDashboardActivity;
 
-public class LoginActivity extends AppCompatActivity {
+import java.util.Objects;
 
+public class LoginActivity extends AppCompatActivity {
     private LoginViewModel loginViewModel;
     private FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
@@ -45,8 +46,8 @@ public class LoginActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        loginViewModel = new ViewModelProvider(this, new LoginViewModelFactory())
-                .get(LoginViewModel.class);
+        loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
+        Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.title_login_activity);
 
         final EditText usernameEditText = findViewById(R.id.username);
         final EditText passwordEditText = findViewById(R.id.password);
@@ -70,7 +71,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        loginViewModel.getLoginResult().observe(this, new Observer<LoginResult>() {
+        loginViewModel.getLoginResult(LoginActivity.this).observe(this, new Observer<LoginResult>() {
             @Override
             public void onChanged(@Nullable LoginResult loginResult) {
                 if (loginResult == null) {
@@ -115,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    loginViewModel.login(usernameEditText.getText().toString(),
+                    loginViewModel.login(LoginActivity.this, usernameEditText.getText().toString(),
                             passwordEditText.getText().toString());
                 }
                 return false;
@@ -126,7 +127,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 loadingProgressBar.setVisibility(View.VISIBLE);
-                loginViewModel.login(usernameEditText.getText().toString(),
+                loginViewModel.login(LoginActivity.this, usernameEditText.getText().toString(),
                         passwordEditText.getText().toString());
             }
         });

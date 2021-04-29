@@ -1,63 +1,97 @@
 package com.project.btp.ui.courses;
 
+import android.content.Intent;
 import android.os.Bundle;
 
-import com.google.android.material.appbar.CollapsingToolbarLayout;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.cardview.widget.CardView;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import android.view.View;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import com.project.btp.R;
+import com.project.btp.ui.login.LoginViewModel;
+import com.project.btp.ui.student.StudentDashboardActivity;
+import com.project.btp.ui.teacher.TeacherDashboardActivity;
 
 public class CoursesActivity extends AppCompatActivity {
 
-    ScrollView coursesListContainer;
-    LinearLayout coursesList;
+    private CoursesViewModel coursesViewModel;
+    private LoginViewModel loginViewModel;
+
+    String userType;
+    String userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_courses);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.stud_dash_toolbar);
-        setSupportActionBar(toolbar);
-        CollapsingToolbarLayout toolBarLayout = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
-        toolBarLayout.setTitle(getTitle());
 
-        // TODO : Add course button
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.add_course);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        coursesViewModel = new ViewModelProvider(this).get(CoursesViewModel.class);
+        loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
 
-        coursesListContainer = findViewById(R.id.coursesListContainer);
-        coursesList = findViewById(R.id.coursesList);
+        final ActionBar actionBar = getSupportActionBar();
+        assert actionBar != null;
+        actionBar.setDisplayHomeAsUpEnabled(true);
 
-        showCourses();
+        userType = getIntent().getStringExtra("userType");
+        userId = getIntent().getStringExtra("user");
+
+        RecyclerView coursesListView = findViewById(R.id.coursesList);
+        final CourseListAdapter adapter = new CourseListAdapter(
+                new CourseListAdapter.CourseDiff(),
+                course -> coursesViewModel.upload(getApplicationContext(), course));
+        coursesListView.setAdapter(adapter);
+        coursesListView.setLayoutManager(new LinearLayoutManager(this));
+
+        // Update cached copy of words in adapter
+        coursesViewModel.getCourses().observe(this, adapter::submitList);
     }
 
-    protected void showCourses() {
-        // TODO : make api call to show current courses
-        int n_courses = 2;
+    private void updateCourses() {
+        coursesViewModel.getCourses(this);
+    }
 
-        for (int i=0; i<n_courses; i++) {
-            CardView course = newCourse();
-            coursesList.addView(course);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_course, menu);
+        return true;
+    }
+
+    @Nullable
+    @Override
+    public Intent getParentActivityIntent() {
+        Intent i = null;
+        if (userType.equals("students")) {
+            i = new Intent(this, StudentDashboardActivity.class);
+        } else i = new Intent(this, TeacherDashboardActivity.class);
+
+        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        i.putExtra("user", userId);
+
+        return i;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.action_logout:
+                loginViewModel.logout(this);
+                finish();
+                return true;
+            case R.id.action_refresh:
+                updateCourses();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
-    protected CardView newCourse() {
-        CardView course = new CardView(getApplicationContext());
-        return course;
-    }
 }

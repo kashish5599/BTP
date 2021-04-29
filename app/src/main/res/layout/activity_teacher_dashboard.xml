@@ -13,14 +13,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:hint="@string/form_course_id"
+        android:hint="@string/form_sem"
         android:inputType="textPersonName"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.081" />
+        app:layout_constraintVertical_bias="0.098" />
+
 
     <EditText
         android:id="@+id/teach_sem"
@@ -34,7 +35,7 @@
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/teach_courseId"
-        app:layout_constraintVertical_bias="0.087" />
+        app:layout_constraintVertical_bias="0.098" />
 
     <EditText
         android:id="@+id/teach_slot"

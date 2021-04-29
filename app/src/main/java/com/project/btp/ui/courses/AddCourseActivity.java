@@ -2,26 +2,30 @@ package com.project.btp.ui.courses;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.btp.R;
+import com.project.btp.data.model.Course;
 import com.project.btp.data.model.LoggedInUser;
+import com.project.btp.ui.login.LoginViewModel;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class AddCourseActivity extends AppCompatActivity {
@@ -29,11 +33,16 @@ public class AddCourseActivity extends AppCompatActivity {
     private String userId;
     private String userType;
     FirebaseDatabase db = FirebaseDatabase.getInstance();
+    private LoginViewModel loginViewModel;
+    private CoursesViewModel coursesViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_course);
+
+        loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
+        coursesViewModel = new ViewModelProvider(this).get(CoursesViewModel.class);
 
         userId = getIntent().getStringExtra("userId");
         userType = getIntent().getStringExtra("userType");
@@ -55,16 +64,18 @@ public class AddCourseActivity extends AppCompatActivity {
                     String cId = courseId.getText().toString();
                     Course course = new Course(
                             cId,
+                            userId,
                             sem.getText().toString(),
-                            slot.getText().toString(),
-                            userId);
+                            slot.getText().toString()
+                            );
 
                     Map<String, Object> updates = new HashMap<>();
                     updates.put("/courses/"+cId, course);
                     updates.put("/users/"+userId+"/courses/"+cId, course);
 
                     db.getReference().updateChildren(updates);
-
+                    course.setNstudents(0);
+                    coursesViewModel.insert(course);
                     Toast.makeText(getApplicationContext(), "Course Created Successfully", Toast.LENGTH_LONG).show();
                     setResult(Activity.RESULT_OK);
                 } else if (userType.equals("student")) {
@@ -99,6 +110,35 @@ public class AddCourseActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        if (userType.equals("student"))
+            inflater.inflate(R.menu.menu_student, menu);
+        else if (userType.equals("teacher"))
+            inflater.inflate(R.menu.menu_teacher, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.action_logout:
+                loginViewModel.logout(this);
+                finish();
+                return true;
+            case R.id.action_analytics:
+                Intent intent = new Intent(getApplicationContext(), CoursesActivity.class);
+                intent.putExtra("user", userId);
+                intent.putExtra("userType", userType);
+                startActivity(intent);
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
 }
