@@ -28,7 +28,7 @@ public class AttendanceViewModel extends AndroidViewModel {
         for (Attendance attendance : attendanceList) mRepository.insertAttendance(attendance);
     }
 
-    public List<User> getStudents(String courseId) {
+    public LiveData<List<User>> getStudents(String courseId) {
         return mRepository.getStudents(courseId);
     }
 }

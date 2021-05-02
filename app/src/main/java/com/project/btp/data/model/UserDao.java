@@ -1,5 +1,6 @@
 package com.project.btp.data.model;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
@@ -16,5 +17,5 @@ public interface UserDao {
     void deleteAll();
 
     @Query("SELECT * FROM user_table WHERE course_id = :courseId")
-    List<User> getStudents(String courseId);
+    LiveData<List<User>> getStudents(String courseId);
 }

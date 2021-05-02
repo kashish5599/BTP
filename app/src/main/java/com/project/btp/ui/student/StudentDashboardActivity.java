@@ -32,6 +32,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.project.btp.R;
 import com.project.btp.ui.courses.AddCourseActivity;
 import com.project.btp.ui.login.LoginViewModel;
+import com.project.btp.ui.teacher.TeacherDashboardActivity;
 import com.project.btp.ui.wifiDirect.WifiDirectBroadcastReceiver;
 
 import java.lang.reflect.Method;
@@ -52,6 +53,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     public List allPeers = new ArrayList();
     public MutableLiveData<Integer> processState = new MutableLiveData<>();
     private LoginViewModel loginViewModel;
+    private static final int LOC_PERM_CODE = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +66,6 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
-        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
 
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -101,28 +102,25 @@ public class StudentDashboardActivity extends AppCompatActivity {
         attendBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO: Indication of current status of request
-                changeDeviceName(studentId);
-                processState.setValue(1);
-                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED) {
+                    checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, LOC_PERM_CODE);
                     return;
                 }
                 mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
-
+                        changeDeviceName(studentId);
+                        processState.setValue(1);
+                        Toast.makeText(StudentDashboardActivity.this, "Attendance process started", Toast.LENGTH_LONG).show();
+                        Log.d("Toast", "Started wifi p2p");
                     }
 
                     @Override
                     public void onFailure(int reason) {
                         Log.d("Toast", Integer.toString(reason));
+                        Toast.makeText(StudentDashboardActivity.this, "Attendance did not start", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(StudentDashboardActivity.this, "Turn on Location", Toast.LENGTH_LONG).show();
                     }
                 });
             }
@@ -132,6 +130,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
         registerReceiver(mReceiver, mIntentFilter);
     }
 
@@ -153,6 +152,31 @@ public class StudentDashboardActivity extends AppCompatActivity {
             });
         } catch (Exception e)   {
             e.printStackTrace();
+        }
+    }
+
+    public void checkPermission(String permission, int requestCode) {
+        ActivityCompat.requestPermissions(StudentDashboardActivity.this,
+                new String[] { permission },
+                requestCode);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults)
+    {
+        super.onRequestPermissionsResult(requestCode,
+                permissions,
+                grantResults);
+
+        if (requestCode == LOC_PERM_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Location Permission Granted", Toast.LENGTH_SHORT).show();
+            }
+            else {
+                Toast.makeText(this, "Location Permission Denied", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

@@ -22,7 +22,8 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     private TeacherDashboardActivity teachActivity;
     private StudentDashboardActivity studActivity;
 
-    public HashSet<String> peers;
+    public HashSet<String> peers = new HashSet<>();
+    private Boolean attendanceStarted = false;
 
     public WifiDirectBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel, TeacherDashboardActivity teachActivity) {
         super();
@@ -49,16 +50,12 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
             } else {
                 // Wifi is not enabled
             }
-        } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
+        }
+        if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
+
             if (manager != null) {
-                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
+                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
                 manager.requestPeers(channel, peerListener);
@@ -68,9 +65,11 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
         if (WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION.equals(action)) {
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_DISCOVERY_STATE, 10000);
             if (state == WifiP2pManager.WIFI_P2P_DISCOVERY_STARTED) {
+                attendanceStarted = true;
                 manager.requestPeers(channel, peerListener);
-            } else if (teachActivity != null) {
+            } else if (teachActivity != null && attendanceStarted) {
                 teachActivity.takeAttendance(peers);
+                attendanceStarted = false;
             }
         }
     }
@@ -81,28 +80,11 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
             if (teachActivity != null) {
                 for (WifiP2pDevice peer : peersList.getDeviceList()) {
                     peers.add(peer.deviceName);
+                    System.out.println(peer.deviceName);
                 }
                 System.out.println("Peers added");
-                // TODO : Add method to display attendance count
             } else if (studActivity != null) {
                 System.out.println("Peers added");
-                // TODO: Show attendance taken for student
-//                studActivity.allPeers.clear();
-//                studActivity.allPeers.addAll(peersList.getDeviceList());
-//
-//                peers = studActivity.allPeers;
-//                System.out.println(peers);
-//
-//                for (int i=0; i<peers.size(); i++) {
-//                    WifiP2pDevice device = (WifiP2pDevice) peers.get(i);
-//
-//                    System.out.println(device.deviceName);
-//                    if (studActivity.studentId.equals(device.deviceName)) {
-//                        studActivity.processState.setValue(2);
-//                    }
-//                }
-//
-//                if (peers.size() == 0) return;
             }
         }
     };

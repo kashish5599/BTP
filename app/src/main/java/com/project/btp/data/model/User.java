@@ -4,12 +4,12 @@ import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
-import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "user_table", indices = {@Index(value = {"userId"}, unique = true)})
+@Entity(tableName = "user_table")
 public class User {
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
+    private int id;
     @NonNull
     private String userId;
     private String username;
@@ -32,6 +32,10 @@ public class User {
         return isTeacher;
     }
 
+    public int getId() {
+        return id;
+    }
+
     public String getUserId() {
         return userId;
     }
@@ -42,6 +46,10 @@ public class User {
 
     public String getCourseId() {
         return courseId;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public void setCourseId(String courseId) {

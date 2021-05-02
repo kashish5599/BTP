@@ -1,5 +1,6 @@
 package com.project.btp.data.model;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
@@ -18,9 +19,9 @@ public interface AttendanceDao {
     @Query("DELETE FROM attendance_table WHERE course_id = :courseId")
     void deleteCourseAttendance(String courseId);
 
-    @Query("SELECT * FROM attendance_table WHERE course_id = :courseId AND date = :date")
-    List<Attendance> getAttendance(String courseId, String date);
+    @Query("SELECT * FROM attendance_table WHERE course_id = :courseId")
+    LiveData<List<Attendance>> getAttendance(String courseId);
 
     @Query("SELECT DISTINCT date FROM attendance_table WHERE course_id = :courseId")
-    List<String> getUniqueDates(String courseId);
+    LiveData<List<String>> getUniqueDates(String courseId);
 }

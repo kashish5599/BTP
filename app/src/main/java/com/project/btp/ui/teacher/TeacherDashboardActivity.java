@@ -1,10 +1,12 @@
 package com.project.btp.ui.teacher;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,9 +16,11 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -25,6 +29,7 @@ import com.project.btp.data.model.Attendance;
 import com.project.btp.data.model.User;
 import com.project.btp.ui.courses.AddCourseActivity;
 import com.project.btp.ui.courses.CoursesActivity;
+import com.project.btp.ui.login.LoginActivity;
 import com.project.btp.ui.login.LoginViewModel;
 import com.project.btp.ui.wifiDirect.WifiDirectBroadcastReceiver;
 
@@ -56,6 +61,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     public boolean processOngoing = false;
     private Map<String, Boolean> studentsList = new HashMap<>();
     private String courseId = "";
+    private static final int LOC_PERM_CODE = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,29 +70,18 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         teacherId = getIntent().getStringExtra("user");
 
-        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        mChannel = mManager.initialize(this, getMainLooper(), null);
-        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
-
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION);
 
+        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        mChannel = mManager.initialize(this, getMainLooper(), null);
+
         attendanceViewModel = new ViewModelProvider(this).get(AttendanceViewModel.class);
         loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
-//        CoursesViewModel coursesViewModel = new ViewModelProvider(this).get(CoursesViewModel.class);
-//
-//        Spinner spinner = (Spinner) findViewById(R.id.teach_course_id);
-//
-//        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-//                R.layout.support_simple_spinner_dropdown_item,
-//                coursesViewModel.getSavedCourses(this.teacherId).toArray(new String[0]));
-//        adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
-//        adapter.add("CourseId");
-//        spinner.setAdapter(adapter);
-//        spinner.setOnItemSelectedListener(this);
+
         final EditText course_id = findViewById(R.id.teach_courseId);
         final Button attendBtn = findViewById(R.id.teach_attendBtn);
         final FloatingActionButton addCourseBtn = findViewById(R.id.teach_addCourseBtn);
@@ -99,72 +94,57 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-//        attendBtn.setOnClickListener(v -> {
-//            //TODO : Show list of students whose has been taken
-//            if (processOngoing) {
-//                timer("END");
+        attendBtn.setOnClickListener(v -> {
+            //TODO : Show list of students whose has been taken
+            if (processOngoing) {
+                timer("END");
 //                stateText.setText("");
-//                attendBtn.setText(R.string.form_attend_btn_recording);
-//                mManager.stopPeerDiscovery(mChannel, new WifiP2pManager.ActionListener() {
-//                    @Override
-//                    public void onSuccess() {
-//
-//                    }
-//
-//                    @Override
-//                    public void onFailure(int reason) {
-//
-//                    }
-//                });
-//            } else {
-//                courseId = course_id.getText().toString();
-//                changeDeviceName(courseId);
-//                timer("START");
-//                stateText.setText(R.string.ongoing_attendance);
-//                attendBtn.setText(R.string.form_attend_btn_stop);
-//                getRegisteredStudents();
-//                processOngoing = true;
-//
-//                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                    // TODO: Consider calling
-//                    //    ActivityCompat#requestPermissions
-//                    // here to request the missing permissions, and then overriding
-//                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//                    //                                          int[] grantResults)
-//                    // to handle the case where the user grants the permission. See the documentation
-//                    // for ActivityCompat#requestPermissions for more details.
-//                    return;
-//                }
-//                mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-//                    @Override
-//                    public void onSuccess() {
-//
-//                    }
-//
-//                    @Override
-//                    public void onFailure(int reason) {
-//                        Log.d("Toast", Integer.toString(reason));
-//                    }
-//                });
-//            }
-//        });
-    }
+                mManager.stopPeerDiscovery(mChannel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        attendBtn.setText(R.string.form_take_attendance);
+                        processOngoing = false;
+                    }
 
-//    @Override
-//    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//        if (position != 0) {
-//            this.courseId = (String) parent.getSelectedItem();
-//        }
-//    }
-//
-//    @Override
-//    public void onNothingSelected(AdapterView<?> parent) {
-//
-//    }
+                    @Override
+                    public void onFailure(int reason) {
+
+                    }
+                });
+            } else {
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, LOC_PERM_CODE);
+                    return;
+                }
+                mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        courseId = course_id.getText().toString();
+                        changeDeviceName(courseId);
+                        timer("START");
+                        attendBtn.setText(R.string.form_attend_btn_stop);
+                        getRegisteredStudents();
+                        processOngoing = true;
+                        Toast.makeText(TeacherDashboardActivity.this, "Attendance process started", Toast.LENGTH_LONG).show();
+                        Log.d("Toast", "Started wifi p2p");
+                    }
+
+                    @Override
+                    public void onFailure(int reason) {
+                        Log.d("Toast", Integer.toString(reason));
+                        Toast.makeText(TeacherDashboardActivity.this, "Attendance did not start", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TeacherDashboardActivity.this, "Turn on Location", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
+        mReceiver = new WifiDirectBroadcastReceiver(mManager, mChannel, this);
         registerReceiver(mReceiver, mIntentFilter);
     }
 
@@ -189,64 +169,44 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
     }
 
+    public void checkPermission(String permission, int requestCode) {
+        ActivityCompat.requestPermissions(TeacherDashboardActivity.this,
+                new String[] { permission },
+                requestCode);
+    }
+
     private void getRegisteredStudents() {
-        for (User student : attendanceViewModel.getStudents(courseId)) {
+        attendanceViewModel.getStudents(courseId).observe(this, students -> {
+            for (User student : students) {
+                System.out.println(student.getUserId());
             studentsList.put(student.getUserId(), false);
         }
-//        db.getReference("courses").child(courseId).child("students")
-//                .addListenerForSingleValueEvent(new ValueEventListener() {
-//                    @Override
-//                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-//                        allStudentsList.clear();
-//                        for (DataSnapshot childSnapshot: snapshot.getChildren()) {
-//                            String userId = childSnapshot.getValue(LoggedInUser.class).getUserId();
-//                            allStudentsList.add(userId);
-//                        }
-//                    }
-//
-//                    @Override
-//                    public void onCancelled(@NonNull DatabaseError error) {
-//                        System.out.println("Students read failed: " + error.getMessage());
-//                    }
-//                });
+        });
     }
 
     public void takeAttendance(HashSet<String> presentStudents) {
+        int presenetStudents = 0;
         for (String student : presentStudents)
-            if (studentsList.containsKey(student)) studentsList.put(student, true);
+            if (studentsList.containsKey(student)) {
+                studentsList.put(student, true);
+                presenetStudents = presenetStudents + 1;
+            }
+        if (presenetStudents > 0) {
+            @SuppressLint("SimpleDateFormat") SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+            String date = dateFormat.format(new Date());
 
-        @SuppressLint("SimpleDateFormat") SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-        String date = dateFormat.format(new Date());
+            List<Attendance> attendanceList = new ArrayList<>();
 
-        List<Attendance> attendanceList = new ArrayList<>();
-
-        for (Map.Entry<String, Boolean> entry : studentsList.entrySet()) {
-            attendanceList.add(new Attendance(courseId, entry.getKey(), entry.getValue(), date));
+            for (Map.Entry<String, Boolean> entry : studentsList.entrySet()) {
+                attendanceList.add(new Attendance(courseId, entry.getKey(), entry.getValue(), date));
+            }
+            String completeMessage = attendanceList.size() + " students recorded.";
+            System.out.println(completeMessage);
+            Toast.makeText(TeacherDashboardActivity.this, completeMessage, Toast.LENGTH_LONG).show();
+            attendanceViewModel.insert(attendanceList);
+        } else {
+            Toast.makeText(TeacherDashboardActivity.this, "Failed to record any attendance", Toast.LENGTH_LONG).show();
         }
-        attendanceViewModel.insert(attendanceList);
-
-//        Map<String, Boolean> students = new HashMap<>();
-//        for (String student : studentsList) {
-//            if (allStudentsList.contains(student)) students.put(student, true);
-//        }
-//
-//        Map<String, Object> updates = new HashMap<>();
-//        long time = (new Date()).getTime();
-//        String attendanceKey = db.getReference("attendance").child(courseId).push().getKey();
-//        String courseKey = db.getReference("courses").child(courseId).child("attendance").push().getKey();
-//
-//        updates.put("/attendance/"+courseId+"/"+attendanceKey+"/students", students);
-//        updates.put("/attendance/"+courseId+"/"+attendanceKey+"/time", time);
-//
-//        updates.put("/courses/"+courseId+"/attendance/"+courseKey+"/attendId", attendanceKey);
-//        updates.put("/courses/"+courseId+"/attendance/"+courseKey+"/teacherId", teacherId);
-//        updates.put("/courses/"+courseId+"/attendance/"+courseKey+"/time", time);
-//
-//        for (String student : students.keySet()) {
-//            updates.put("/users/"+student+"/attendance/"+courseKey+"/"+attendanceKey, true);
-//        }
-//
-//        db.getReference().updateChildren(updates);
     }
 
     public void timer(String state){
@@ -265,6 +225,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             endTime = timer;
         }
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults)
+    {
+        super.onRequestPermissionsResult(requestCode,
+                permissions,
+                grantResults);
+
+        if (requestCode == LOC_PERM_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Location Permission Granted", Toast.LENGTH_SHORT).show();
+            }
+            else {
+                Toast.makeText(this, "Location Permission Denied", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
@@ -290,5 +269,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+
+
     }
 }

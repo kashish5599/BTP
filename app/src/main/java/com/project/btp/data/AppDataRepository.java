@@ -29,15 +29,15 @@ public class AppDataRepository {
         mCourses = mCourseDao.getAllCourses();
     }
 
-    public List<Attendance> getAttendance(String course, String date) {
-        return mAttendanceDao.getAttendance(course, date);
+    public LiveData<List<Attendance>> getAttendance(String course) {
+        return mAttendanceDao.getAttendance(course);
     }
 
     public LiveData<List<Course>> getAllCourses() {
         return mCourses;
     }
 
-    public List<User> getStudents(String courseId) {
+    public LiveData<List<User>> getStudents(String courseId) {
         return mUserDao.getStudents(courseId);
     }
 
@@ -54,14 +54,29 @@ public class AppDataRepository {
     }
 
     public void deleteAttendance(String courseId) {
-        mAttendanceDao.deleteCourseAttendance(courseId);
+        new deleteAttendanceAsyncTask(mAttendanceDao).execute(courseId);
+    }
+
+    private static class deleteAttendanceAsyncTask extends AsyncTask<String, Void, Void> {
+        private AttendanceDao attendanceDao;
+
+        deleteAttendanceAsyncTask(AttendanceDao attendanceDao) {
+            this.attendanceDao = attendanceDao;
+        }
+
+        @Override
+        protected Void doInBackground(final String... params) {
+            attendanceDao.deleteCourseAttendance(params[0]);
+
+            return null;
+        }
     }
 
     public void insertCourse(Course course) {
         AppDatabase.databaseWriteExecutor.execute(() -> mCourseDao.insert(course));
     }
 
-    public List<String> getAttendanceDates(String course) {
+    public LiveData<List<String>> getAttendanceDates(String course) {
         return mAttendanceDao.getUniqueDates(course);
     }
 
